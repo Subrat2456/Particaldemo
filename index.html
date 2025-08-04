@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIELIT O-Level Practical Exam Simulation</title>
+    
+    <!-- External Libraries: Font Awesome for Icons & CodeMirror for Editor -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css">
+
+    <style>
+        /* --- Global Styles & Variables --- */
+        :root {
+            --primary-color: #0056a3;
+            --secondary-color: #f37021;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --light-gray: #f8f9fa;
+            --medium-gray: #e9ecef;
+            --dark-gray: #6c757d;
+            --text-color: #343a40;
+            --bg-color: #ffffff;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --border-radius: 6px;
+            --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            margin: 0;
+            font-size: 16px;
+            overflow-x: hidden;
+        }
+        
+        /* Page container to manage views */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* --- Authentication & Instructions Pages --- */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 450px;
+            background: var(--bg-color);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-header img {
+            max-width: 180px;
+            margin-bottom: 1rem;
+        }
+
+        .auth-header h2 {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 86, 163, 0.2);
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            font-size: 0.875rem;
+            min-height: 1.2em;
+            margin-top: 0.25rem;
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #00417c; }
+        .btn-primary:disabled { background-color: var(--medium-gray); color: var(--dark-gray); cursor: not-allowed; }
+
+        .btn-secondary { background-color: var(--dark-gray); color: white; }
+        .btn-secondary:hover { background-color: #5a6268; }
+
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover { background-color: #218838; }
+
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-danger:hover { background-color: #c82333; }
+
+        .btn-full { width: 100%; justify-content: center; }
+
+        .btn-icon {
+            background: transparent;
+            border: 1px solid #ccc;
+            color: var(--text-color);
+            padding: 5px 8px;
+        }
+        .btn-icon:hover { background-color: var(--medium-gray); }
+
+
+        /* --- Instructions Page --- */
+        .instructions-card { max-width: 700px; }
+        .instructions-content { text-align: left; }
+        .instruction-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 1.5rem;
+        }
+        .instruction-item i {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-top: 4px;
+        }
+        .instructions-footer {
+            text-align: center;
+            border-top: 1px solid var(--medium-gray);
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .form-check {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* --- Exam Page Layout --- */
+        #exam-page {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #exam-page.active {
+            display: flex;
+        }
+
+        .exam-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 0.5rem 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+        .exam-header .logo { display: flex; align-items: center; gap: 15px; }
+        .exam-header .logo img { height: 40px; }
+        .exam-header .logo span { font-weight: 600; font-size: 1.1rem; }
+
+        .timer-container {
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: var(--medium-gray);
+            padding: 8px 18px;
+            border-radius: 25px;
+            transition: color 0.3s;
+        }
+
+        .exam-body {
+            display: flex;
+            flex-grow: 1;
+            min-height: 0;
+        }
+
+        .question-sidebar {
+            width: 280px;
+            background: var(--bg-color);
+            border-right: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            flex-shrink: 0;
+        }
+        .sidebar-header { margin-bottom: 1rem; }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: var(--medium-gray);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .progress-indicator {
+            height: 100%;
+            width: 0%;
+            background-color: var(--success-color);
+            transition: width 0.3s;
+        }
+        #question-list { overflow-y: auto; }
+        .question-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: var(--light-gray);
+            border-left: 4px solid transparent;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .question-item:hover { background-color: var(--medium-gray); }
+        .question-item.active {
+            background-color: #e7f1ff;
+            border-left-color: var(--primary-color);
+            font-weight: 600;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .status-unattempted { border: 1px solid var(--dark-gray); }
+        .status-attempted { background-color: #ffc107; }
+        .status-completed { background-color: var(--success-color); }
+
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            background-color: #f4f7f9;
+        }
+        .question-panel { padding: 1rem; background: var(--bg-color); border-radius: var(--border-radius); margin-bottom: 1rem; }
+
+        .panel-container {
+            display: flex;
+            flex-grow: 1;
+            min-height: 0;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-color);
+            border: 1px solid #dee2e6;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        .editor-panel { flex-basis: 55%; }
+        .output-panel { flex-basis: 45%; }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 15px;
+            background-color: var(--light-gray);
+            border-bottom: 1px solid #dee2e6;
+        }
+        .panel-header h4 { margin: 0; font-size: 1rem; }
+        .panel-header .editor-controls { display: flex; gap: 5px; }
+
+        .CodeMirror {
+            flex-grow: 1;
+            height: auto;
+            font-size: 16px;
+        }
+        #output-frame {
+            flex-grow: 1;
+            width: 100%;
+            border: none;
+            background: #fff;
+        }
+        
+        .resizer {
+            flex-basis: 5px;
+            background-color: #dee2e6;
+            cursor: col-resize;
+            flex-shrink: 0;
+        }
+
+        .main-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            padding-top: 1rem;
+        }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-content {
+            background-color: var(--bg-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .modal-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .result-card { max-width: 700px; }
+        .result-header { color: var(--primary-color); margin-bottom: 1.5rem; }
+        #results-breakdown table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        #results-breakdown th, #results-breakdown td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        #results-breakdown th { background-color: var(--light-gray); }
+        .result-summary .pass { color: var(--success-color); font-weight: bold; }
+        .result-summary .fail { color: var(--danger-color); font-weight: bold; }
+
+
+        /* --- Responsive Design --- */
+        @media (max-width: 1024px) {
+            .exam-body { flex-direction: column; }
+            .question-sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                align-items: center;
+                overflow-x: auto;
+                padding: 0.5rem;
+            }
+            #question-list { display: flex; gap: 8px; }
+            .question-item { flex-shrink: 0; }
+            
+            .panel-container { flex-direction: column; }
+            .resizer { display: none; /* Hiding resizer on mobile is simpler */ }
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #result-modal, #result-modal * { visibility: visible; }
+            #result-modal {
+                position: absolute; left: 0; top: 0;
+                width: 100%; max-width: 100%;
+                box-shadow: none; border: 1px solid #ccc;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ======== LOGIN PAGE ======== -->
+    <div id="login-page" class="page active">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <img src="https://www.nielit.gov.in/sites/all/themes/nielit/logo.png" alt="NIELIT Logo">
+                    <h2>O-Level Practical Exam</h2>
+                </div>
+                <form id="loginForm" class="auth-form" novalidate>
+                    <div class="form-group">
+                        <label for="username">Enrollment Number</label>
+                        <input type="text" id="username" placeholder="Enter: 12345678" required aria-label="Username">
+                        <div class="error-message" id="username-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="Enter: Abc@143" required aria-label="Password">
+                        <div class="error-message" id="password-error"></div>
+                    </div>
+                    <p id="form-error" class="error-message"></p>
+                    <button type="submit" class="btn btn-primary btn-full">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== INSTRUCTIONS PAGE ======== -->
+    <div id="instructions-page" class="page">
+        <div class="auth-container">
+            <div class="auth-card instructions-card">
+                <div class="auth-header">
+                    <h2>Exam Instructions</h2>
+                </div>
+                <div class="instructions-content">
+                    <div class="instruction-item">
+                        <i class="fas fa-clock"></i>
+                        <div><strong>Exam Duration:</strong> 50 minutes. The timer will start as soon as you proceed.</div>
+                    </div>
+                    <div class="instruction-item">
+                        <i class="fas fa-file-alt"></i>
+                        <div><strong>Marking Scheme:</strong> Questions have varying marks. Evaluation is based on code correctness and output.</div>
+                    </div>
+                    <div class="instruction-item">
+                        <i class="fas fa-check-circle"></i>
+                        <div><strong>Permitted:</strong> Use the provided editor. Run code as many times as you like before final submission.</div>
+                    </div>
+                    <div class="instruction-item">
+                        <i class="fas fa-times-circle"></i>
+                        <div><strong>Restricted:</strong> Do not close the exam window or use external help. Progress is saved automatically.</div>
+                    </div>
+                </div>
+                <div class="instructions-footer">
+                    <div class="form-check">
+                        <input type="checkbox" id="confirmInstructions">
+                        <label for="confirmInstructions">I have read and understood all the instructions.</label>
+                    </div>
+                    <button id="startExamBtn" class="btn btn-primary" disabled>Start Exam</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== EXAM PAGE ======== -->
+    <div id="exam-page" class="page">
+        <header class="exam-header">
+            <div class="logo">
+                <img src="https://www.nielit.gov.in/sites/all/themes/nielit/logo.png" alt="NIELIT Logo">
+                <span>Web Designing & Publishing</span>
+            </div>
+            <div class="timer-container"><i class="fas fa-clock"></i> <span id="timer">50:00</span></div>
+            <div class="header-controls"><button id="endExamBtn" class="btn btn-danger"><i class="fas fa-power-off"></i> End Exam</button></div>
+        </header>
+
+        <div class="exam-body">
+            <aside class="question-sidebar">
+                <div class="sidebar-header">
+                    <h3>Questions</h3>
+                    <div class="progress-bar"><div id="progress-indicator" class="progress-indicator"></div></div>
+                </div>
+                <div id="question-list"></div>
+            </aside>
+
+            <main class="main-content" id="main-content">
+                <div class="panel question-panel"><div id="question-display"></div></div>
+                <div class="panel-container">
+                    <div class="panel editor-panel">
+                        <div class="panel-header">
+                            <h4><i class="fas fa-code"></i> Code Editor</h4>
+                            <div class="editor-controls">
+                                <button id="themeToggleBtn" class="btn btn-icon" aria-label="Toggle Theme"><i class="fas fa-moon"></i></button>
+                                <button id="zoomInBtn" class="btn btn-icon" aria-label="Zoom In"><i class="fas fa-search-plus"></i></button>
+                                <button id="zoomOutBtn" class="btn btn-icon" aria-label="Zoom Out"><i class="fas fa-search-minus"></i></button>
+                            </div>
+                        </div>
+                        <textarea id="code-editor"></textarea>
+                    </div>
+                    <div class="resizer" id="resizer"></div>
+                    <div class="panel output-panel">
+                        <div class="panel-header"><h4><i class="fas fa-play"></i> Output</h4></div>
+                        <iframe id="output-frame" sandbox="allow-scripts allow-same-origin" title="Output"></iframe>
+                    </div>
+                </div>
+                <footer class="main-footer">
+                    <button id="runBtn" class="btn btn-secondary"><i class="fas fa-cogs"></i> Run Code</button>
+                    <button id="submitBtn" class="btn btn-success"><i class="fas fa-check"></i> Submit Answer</button>
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <!-- ======== MODALS ======== -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-title">Confirm Action</h3>
+            <p id="modal-body">Are you sure?</p>
+            <div class="modal-actions">
+                <button id="modal-confirm-btn" class="btn">Confirm</button>
+                <button id="modal-cancel-btn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="result-modal" class="modal-overlay">
+         <div class="modal-content result-card">
+            <h2 class="result-header">Final Exam Results</h2>
+            <div id="results-breakdown"></div>
+            <div class="modal-actions">
+                <button id="printResultsBtn" class="btn btn-secondary"><i class="fas fa-print"></i> Print</button>
+                <button id="backToLoginBtn" class="btn btn-primary">Go to Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- External Libraries: CodeMirror JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/htmlmixed/htmlmixed.min.js"></script>
+
+    <!-- ======== APPLICATION JAVASCRIPT ======== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- PAGE NAVIGATION ---
+            const pages = document.querySelectorAll('.page');
+            const showPage = (pageId) => {
+                pages.forEach(page => {
+                    page.classList.remove('active');
+                    if (page.id === pageId) {
+                        page.classList.add('active');
+                    }
+                });
+            };
+
+            // --- LOGIN PAGE LOGIC ---
+            document.getElementById('loginForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const username = document.getElementById('username');
+                const password = document.getElementById('password');
+                const formError = document.getElementById('form-error');
+                let isValid = true;
+
+                if (username.value.trim() === '') {
+                    document.getElementById('username-error').textContent = 'Enrollment number is required.';
+                    isValid = false;
+                } else {
+                    document.getElementById('username-error').textContent = '';
+                }
+
+                if (password.value.trim() === '') {
+                    document.getElementById('password-error').textContent = 'Password is required.';
+                    isValid = false;
+                } else {
+                    document.getElementById('password-error').textContent = '';
+                }
+                
+                if (!isValid) return;
+
+                if (username.value === '12345678' && password.value === 'Abc@143') {
+                    showPage('instructions-page');
+                } else {
+                    formError.textContent = 'Invalid credentials. Please try again.';
+                }
+            });
+
+            // --- INSTRUCTIONS PAGE LOGIC ---
+            const confirmCheck = document.getElementById('confirmInstructions');
+            const startBtn = document.getElementById('startExamBtn');
+
+            confirmCheck.addEventListener('change', () => {
+                startBtn.disabled = !confirmCheck.checked;
+            });
+
+            startBtn.addEventListener('click', () => {
+                if (confirmCheck.checked) {
+                    showPage('exam-page');
+                    initExam(); // Initialize the exam environment
+                }
+            });
+            
+            // --- BACK TO LOGIN FROM RESULTS ---
+            document.getElementById('backToLoginBtn').addEventListener('click', () => {
+                document.getElementById('result-modal').classList.remove('show');
+                showPage('login-page');
+                // Reset login form for next use
+                document.getElementById('loginForm').reset();
+                document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+            });
+
+            document.getElementById('printResultsBtn').addEventListener('click', () => {
+                window.print();
+            });
+
+
+            // --- EXAM LOGIC ---
+            let examInitialized = false;
+            let editor; // To be initialized
+            
+            const initExam = () => {
+                if (examInitialized) return; // Prevent re-initialization
+                
+                // --- Sample Data ---
+                const questions = [
+                    { year: "July 2019", task: "Create a responsive webpage with a header, navigation, 3 content sections using flexbox, and a footer.", marks: 25, keywords: ['<header>', '<nav>', 'display: flex', '<footer>'] },
+                    { year: "Jan 2020", task: "Write JavaScript to validate a form with 'name' (not empty), 'email' (valid format), and 'phone' (10 digits). Show error messages.", marks: 20, keywords: ['getElementById', '.value', 'preventDefault', 'innerHTML', 'innerText', /@/, /\d{10}/] },
+                    { year: "July 2021", task: "Create an image gallery using CSS Grid. Add a hover effect to scale the images.", marks: 15, keywords: ['display: grid', 'grid-template-columns', '<img>', ':hover', 'transform: scale'] },
+                    { year: "Jan 2022", task: "Build a 'To-Do List' app using JavaScript. Allow users to add items using an input field and a button, and remove items by clicking on them.", marks: 20, keywords: ['createElement', 'appendChild', 'addEventListener', 'click', 'remove()', '<input>'] }
+                ];
+                
+                // --- DOM Elements ---
+                const elements = {
+                    timer: document.getElementById('timer'),
+                    questionList: document.getElementById('question-list'),
+                    progressIndicator: document.getElementById('progress-indicator'),
+                    questionDisplay: document.getElementById('question-display'),
+                    outputFrame: document.getElementById('output-frame'),
+                    runBtn: document.getElementById('runBtn'),
+                    submitBtn: document.getElementById('submitBtn'),
+                    themeToggleBtn: document.getElementById('themeToggleBtn'),
+                    zoomInBtn: document.getElementById('zoomInBtn'),
+                    zoomOutBtn: document.getElementById('zoomOutBtn'),
+                    endExamBtn: document.getElementById('endExamBtn'),
+                    modal: document.getElementById('custom-modal'),
+                    modalTitle: document.getElementById('modal-title'),
+                    modalBody: document.getElementById('modal-body'),
+                    modalConfirmBtn: document.getElementById('modal-confirm-btn'),
+                    modalCancelBtn: document.getElementById('modal-cancel-btn'),
+                    resultModal: document.getElementById('result-modal'),
+                    resultsBreakdown: document.getElementById('results-breakdown'),
+                };
+                
+                // --- State Management ---
+                let state = {
+                    activeQuestionIndex: 0,
+                    timeLeft: 3000,
+                    timerInterval: null,
+                    answers: [],
+                    editorTheme: 'eclipse',
+                    fontSize: 16
+                };
+
+                // --- CodeMirror Editor Instance ---
+                editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+                    mode: 'htmlmixed',
+                    lineNumbers: true,
+                    theme: state.editorTheme,
+                    lineWrapping: true,
+                    autofocus: true,
+                });
+                
+                const loadState = () => {
+                    const savedState = localStorage.getItem('nielitExamState');
+                    if (savedState) {
+                        Object.assign(state, JSON.parse(savedState));
+                        if (state.answers.length !== questions.length) initializeAnswers();
+                    } else {
+                        initializeAnswers();
+                    }
+                };
+
+                const initializeAnswers = () => {
+                    state.answers = questions.map(() => ({ code: '', status: 'unattempted' }));
+                };
+
+                const saveState = () => {
+                    state.answers[state.activeQuestionIndex].code = editor.getValue();
+                    localStorage.setItem('nielitExamState', JSON.stringify(state));
+                };
+
+                const startTimer = () => {
+                    if (state.timerInterval) clearInterval(state.timerInterval);
+                    state.timerInterval = setInterval(() => {
+                        state.timeLeft--;
+                        updateTimerDisplay();
+                        if (state.timeLeft % 10 === 0) saveState();
+                        if (state.timeLeft <= 0) endExam(true);
+                    }, 1000);
+                };
+
+                const updateTimerDisplay = () => {
+                    const minutes = Math.floor(state.timeLeft / 60);
+                    const seconds = state.timeLeft % 60;
+                    elements.timer.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    const timerContainer = elements.timer.parentElement;
+                    if (state.timeLeft <= 300) timerContainer.style.color = 'var(--danger-color)';
+                    else if (state.timeLeft <= 600) timerContainer.style.color = 'var(--secondary-color)';
+                };
+
+                const renderQuestionList = () => {
+                    elements.questionList.innerHTML = '';
+                    questions.forEach((q, index) => {
+                        const item = document.createElement('div');
+                        item.className = `question-item ${index === state.activeQuestionIndex ? 'active' : ''}`;
+                        item.innerHTML = `<span>Q${index + 1}: ${q.year}</span><span class="status-indicator status-${state.answers[index].status}" title="${state.answers[index].status}"></span>`;
+                        item.onclick = () => selectQuestion(index);
+                        elements.questionList.appendChild(item);
+                    });
+                    updateProgress();
+                };
+
+                const selectQuestion = (index) => {
+                    if (state.answers[state.activeQuestionIndex]) state.answers[state.activeQuestionIndex].code = editor.getValue();
+                    state.activeQuestionIndex = index;
+                    const question = questions[index];
+                    elements.questionDisplay.innerHTML = `<h3>Question ${index + 1} <small>(${question.year})</small></h3><p>${question.task}</p><p><strong>Marks: ${question.marks}</strong></p>`;
+                    editor.setValue(state.answers[index].code);
+                    editor.clearHistory();
+                    editor.focus();
+                    renderQuestionList();
+                    saveState();
+                };
+
+                const updateProgress = () => {
+                    const completedCount = state.answers.filter(a => a.status === 'completed').length;
+                    elements.progressIndicator.style.width = `${(completedCount / questions.length) * 100}%`;
+                };
+
+                const runCode = () => {
+                    const iframeDoc = elements.outputFrame.contentWindow.document;
+                    iframeDoc.open();
+                    iframeDoc.write(editor.getValue());
+                    iframeDoc.close();
+                };
+
+                const submitAnswer = () => {
+                    if (editor.getValue().trim() === '') return alert('Cannot submit an empty answer.');
+                    showModal('Confirm Submission', `Are you sure you want to submit your answer for Question ${state.activeQuestionIndex + 1}? You won't be able to edit it again.`, () => {
+                        const currentIndex = state.activeQuestionIndex;
+                        state.answers[currentIndex].code = editor.getValue();
+                        state.answers[currentIndex].status = 'completed';
+                        renderQuestionList();
+                        saveState();
+                    });
+                };
+
+                const endExam = (isAutoSubmit = false) => {
+                    clearInterval(state.timerInterval);
+                    const performEnd = () => {
+                        evaluateAndShowResults();
+                        localStorage.removeItem('nielitExamState');
+                    };
+                    if (isAutoSubmit) performEnd();
+                    else showModal('End Exam', 'Are you sure you want to end the exam? All submitted answers will be evaluated.', performEnd);
+                };
+                
+                const evaluateAndShowResults = () => {
+                    let totalScore = 0;
+                    let totalMarks = 0;
+                    let tableHTML = `<table><thead><tr><th>Question</th><th>Status</th><th>Score</th><th>Max Marks</th></tr></thead><tbody>`;
+
+                    questions.forEach((q, index) => {
+                        totalMarks += q.marks;
+                        const answer = state.answers[index];
+                        let score = 0;
+                        if (answer.status === 'completed' || (answer.status === 'attempted' && answer.code.trim() !== '')) {
+                            let matchedKeywords = 0;
+                            q.keywords.forEach(keyword => {
+                                if (keyword instanceof RegExp ? keyword.test(answer.code) : answer.code.includes(keyword)) matchedKeywords++;
+                            });
+                            score = Math.round(q.marks * (matchedKeywords / q.keywords.length));
+                        }
+                        totalScore += score;
+                        tableHTML += `<tr><td>Q${index + 1} (${q.year})</td><td><span class="status-${answer.status}">${answer.status}</span></td><td>${score}</td><td>${q.marks}</td></tr>`;
+                    });
+
+                    const passStatus = (totalScore / totalMarks) * 100 >= 50 ? "Pass" : "Fail";
+                    tableHTML += `</tbody></table><div class="result-summary"><h3>Total Score: ${totalScore} / ${totalMarks}</h3><h2 class="final-status ${passStatus.toLowerCase()}">Status: ${passStatus}</h2></div>`;
+                    elements.resultsBreakdown.innerHTML = tableHTML;
+                    elements.resultModal.classList.add('show');
+                };
+
+                const showModal = (title, body, onConfirm) => {
+                    elements.modalTitle.textContent = title;
+                    elements.modalBody.textContent = body;
+                    elements.modal.classList.add('show');
+                    const newConfirmBtn = elements.modalConfirmBtn.cloneNode(true);
+                    elements.modalConfirmBtn.parentNode.replaceChild(newConfirmBtn, elements.modalConfirmBtn);
+                    elements.modalConfirmBtn = newConfirmBtn;
+                    elements.modalConfirmBtn.onclick = () => {
+                        elements.modal.classList.remove('show');
+                        onConfirm();
+                    };
+                };
+
+                const updateThemeIcon = () => elements.themeToggleBtn.querySelector('i').className = state.editorTheme === 'dracula' ? 'fas fa-sun' : 'fas fa-moon';
+                const changeFontSize = (delta) => {
+                    state.fontSize = Math.max(10, Math.min(30, state.fontSize + delta));
+                    editor.getWrapperElement().style.fontSize = `${state.fontSize}px`;
+                    editor.refresh();
+                    saveState();
+                };
+
+                // --- Event Listeners ---
+                elements.runBtn.addEventListener('click', runCode);
+                elements.submitBtn.addEventListener('click', submitAnswer);
+                elements.endExamBtn.addEventListener('click', () => endExam(false));
+                elements.themeToggleBtn.addEventListener('click', () => {
+                    state.editorTheme = state.editorTheme === 'eclipse' ? 'dracula' : 'eclipse';
+                    editor.setOption('theme', state.editorTheme);
+                    updateThemeIcon();
+                    saveState();
+                });
+                elements.zoomInBtn.addEventListener('click', () => changeFontSize(2));
+                elements.zoomOutBtn.addEventListener('click', () => changeFontSize(-2));
+                elements.modalCancelBtn.addEventListener('click', () => elements.modal.classList.remove('show'));
+                editor.on('change', () => {
+                    if (state.answers[state.activeQuestionIndex].status === 'unattempted' && editor.getValue().trim() !== '') {
+                        state.answers[state.activeQuestionIndex].status = 'attempted';
+                        renderQuestionList();
+                    }
+                });
+
+                // --- Initializer Call ---
+                loadState();
+                editor.setOption('theme', state.editorTheme);
+                editor.getWrapperElement().style.fontSize = `${state.fontSize}px`;
+                editor.refresh();
+                updateThemeIcon();
+                renderQuestionList();
+                selectQuestion(state.activeQuestionIndex);
+                startTimer();
+
+                examInitialized = true;
+            };
+
+            // --- RESIZABLE PANEL LOGIC ---
+            const resizer = document.getElementById('resizer');
+            const editorPanel = document.querySelector('.editor-panel');
+            resizer.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                window.addEventListener('mousemove', resize);
+                window.addEventListener('mouseup', stopResize);
+            });
+            function resize(e) {
+                const parent = resizer.parentElement;
+                const newWidth = e.clientX - parent.getBoundingClientRect().left;
+                if (newWidth > 200 && newWidth < parent.offsetWidth - 200) {
+                    editorPanel.style.flexBasis = newWidth + 'px';
+                }
+            }
+            function stopResize() {
+                window.removeEventListener('mousemove', resize);
+            }
+        });
+    </script>
+
+</body>
+</html>
